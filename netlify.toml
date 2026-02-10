@@ -2,6 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
+# Contactformulier: in Netlify Dashboard > Forms > Form notifications >
+# "Add notification" > "Email notification" instellen op info@streetfoodcollective.nl
+
 # SPA: alle routes naar index.html (voor directe links)
 [[redirects]]
   from = "/*"

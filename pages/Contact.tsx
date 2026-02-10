@@ -1,12 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Mail, Phone, MapPin, MessageCircle, Send, CheckCircle } from 'lucide-react';
-
-// EmailJS configuratie - Vervang deze waarden met je eigen EmailJS credentials
-// Ga naar https://www.emailjs.com/ om een gratis account aan te maken
-const EMAILJS_SERVICE_ID = 'YOUR_SERVICE_ID'; // Vervang met je EmailJS Service ID
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID'; // Vervang met je EmailJS Template ID
-const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'; // Vervang met je EmailJS Public Key
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -20,13 +14,6 @@ const Contact: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    // Initialiseer EmailJS
-    if (typeof window !== 'undefined' && (window as any).emailjs) {
-      (window as any).emailjs.init(EMAILJS_PUBLIC_KEY);
-    }
-  }, []);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -39,67 +26,55 @@ const Contact: React.FC = () => {
     setIsSubmitting(true);
     setError('');
 
+    const payload = {
+      'form-name': 'contact',
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone || '',
+      subject: formData.subject || 'Contactformulier Streetfood Collective',
+      message: formData.message,
+      'bot-field': '' // honeypot voor spam
+    };
+
     try {
-      // Check of EmailJS is geconfigureerd
-      if (EMAILJS_SERVICE_ID === 'YOUR_SERVICE_ID' || EMAILJS_TEMPLATE_ID === 'YOUR_TEMPLATE_ID' || EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
-        // Fallback naar mailto als EmailJS niet is geconfigureerd
-        const subject = encodeURIComponent(formData.subject || 'Contactformulier Streetfood Collective');
-        const body = encodeURIComponent(
-          `Naam: ${formData.name}\n` +
-          `Email: ${formData.email}\n` +
-          `Telefoon: ${formData.phone || 'Niet opgegeven'}\n\n` +
-          `Bericht:\n${formData.message}`
-        );
-        window.location.href = `mailto:info@streetfoodcollective.nl?subject=${subject}&body=${body}`;
+      // Netlify Forms: POST naar de site (op Netlify wordt dit afgehandeld en doorgestuurd naar info@streetfoodcollective.nl)
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(payload).toString()
+      });
+
+      if (response.ok) {
         setIsSubmitted(true);
-        setIsSubmitting(false);
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          subject: '',
-          message: ''
-        });
+        setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
         setTimeout(() => setIsSubmitted(false), 5000);
+        setIsSubmitting(false);
         return;
       }
 
-      // Gebruik EmailJS om direct e-mail te versturen
-      if (typeof window !== 'undefined' && (window as any).emailjs) {
-        const templateParams = {
-          from_name: formData.name,
-          from_email: formData.email,
-          phone: formData.phone || 'Niet opgegeven',
-          subject: formData.subject,
-          message: formData.message,
-          to_email: 'info@streetfoodcollective.nl'
-        };
-
-        await (window as any).emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          templateParams
-        );
-
-        setIsSubmitted(true);
-        setIsSubmitting(false);
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          subject: '',
-          message: ''
-        });
-
-        setTimeout(() => {
-          setIsSubmitted(false);
-        }, 5000);
-      } else {
-        throw new Error('EmailJS niet geladen');
-      }
+      // Fallback: mailto naar info@streetfoodcollective.nl (bv. bij lokaal testen of als Netlify Forms niet beschikbaar is)
+      const subject = encodeURIComponent(formData.subject || 'Contactformulier Streetfood Collective');
+      const body = encodeURIComponent(
+        `Naam: ${formData.name}\n` +
+        `Email: ${formData.email}\n` +
+        `Telefoon: ${formData.phone || 'Niet opgegeven'}\n\n` +
+        `Bericht:\n${formData.message}`
+      );
+      window.location.href = `mailto:info@streetfoodcollective.nl?subject=${subject}&body=${body}`;
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      setTimeout(() => setIsSubmitted(false), 5000);
     } catch (err) {
-      console.error('Email verzenden mislukt:', err);
-      setError('Er is iets misgegaan. Probeer het opnieuw of stuur direct een e-mail naar info@streetfoodcollective.nl');
+      console.error('Verzenden mislukt:', err);
+      const subject = encodeURIComponent(formData.subject || 'Contactformulier Streetfood Collective');
+      const body = encodeURIComponent(
+        `Naam: ${formData.name}\nEmail: ${formData.email}\nTelefoon: ${formData.phone || 'Niet opgegeven'}\n\nBericht:\n${formData.message}`
+      );
+      window.location.href = `mailto:info@streetfoodcollective.nl?subject=${subject}&body=${body}`;
+      setIsSubmitted(true);
+      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      setTimeout(() => setIsSubmitted(false), 5000);
+    } finally {
       setIsSubmitting(false);
     }
   };

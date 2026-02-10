@@ -40,8 +40,15 @@ const App: React.FC = () => {
       <Navbar onNavigate={setCurrentPath} currentPath={currentPath} />
       <main className="flex-grow">{renderPage()}</main>
       <Footer onNavigate={setCurrentPath} />
-      <div className="md:hidden fixed bottom-6 right-6 z-40">
-        <button onClick={() => setCurrentPath('/booking')} className="bg-gold text-dark p-4 rounded-full shadow-2xl font-bold uppercase text-xs tracking-widest px-4">Boek Nu</button>
+      <div className="md:hidden fixed bottom-6 right-6 z-[9997] touch-manipulation">
+        <button
+          type="button"
+          onClick={() => setCurrentPath('/booking')}
+          onPointerDown={(e) => { e.currentTarget.releasePointerCapture(e.pointerId); }}
+          className="min-w-[56px] min-h-[56px] bg-gold text-dark p-4 rounded-full shadow-2xl font-bold uppercase text-xs tracking-widest px-4 cursor-pointer active:scale-95 transition-transform"
+        >
+          Boek Nu
+        </button>
       </div>
     </div>
   );
