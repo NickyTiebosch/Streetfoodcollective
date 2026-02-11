@@ -67,13 +67,25 @@
 </head>
 <body>
     <div id="root"></div>
-    <!-- Hidden form for Netlify Forms (notifications instellen op info@streetfoodcollective.nl in Netlify dashboard) -->
+    <!-- Hidden forms for Netlify Forms (notifications instellen op info@streetfoodcollective.nl in Netlify dashboard) -->
     <form name="contact" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
       <input type="hidden" name="form-name" value="contact" />
       <input type="text" name="name" />
       <input type="email" name="email" />
       <input type="text" name="phone" />
       <input type="text" name="subject" />
+      <textarea name="message"></textarea>
+      <input type="text" name="bot-field" />
+    </form>
+    <form name="booking" method="POST" data-netlify="true" data-netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="booking" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="date" name="date" />
+      <input type="text" name="guests" />
+      <input type="text" name="eventType" />
+      <input type="text" name="budget" />
+      <input type="text" name="concepts" />
       <textarea name="message"></textarea>
       <input type="text" name="bot-field" />
     </form>

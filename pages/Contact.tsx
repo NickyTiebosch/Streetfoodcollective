@@ -2,6 +2,13 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, MessageCircle, Send, CheckCircle } from 'lucide-react';
 
+// Web3Forms Access Key - Haal deze op via https://web3forms.com/
+// 1. Ga naar https://web3forms.com/
+// 2. Verifieer je e-mail: info@streetfoodcollective.nl
+// 3. Kopieer je Access Key en plak deze hieronder
+// De key kan publiek zijn - dat is veilig!
+const WEB3FORMS_ACCESS_KEY = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || '';
+
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -26,22 +33,55 @@ const Contact: React.FC = () => {
     setIsSubmitting(true);
     setError('');
 
-    const payload = {
-      'form-name': 'contact',
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone || '',
-      subject: formData.subject || 'Contactformulier Streetfood Collective',
-      message: formData.message,
-      'bot-field': '' // honeypot voor spam
-    };
-
     try {
-      // Netlify Forms: POST naar de site (op Netlify wordt dit afgehandeld en doorgestuurd naar info@streetfoodcollective.nl)
+      // Web3Forms - Werkt automatisch, geen configuratie nodig (behalve access key)
+      if (WEB3FORMS_ACCESS_KEY) {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            access_key: WEB3FORMS_ACCESS_KEY,
+            subject: formData.subject || 'Contactformulier Streetfood Collective',
+            from_name: formData.name,
+            from_email: formData.email,
+            phone: formData.phone || 'Niet opgegeven',
+            message: formData.message,
+            // Stuur direct naar info@streetfoodcollective.nl
+            to_email: 'info@streetfoodcollective.nl'
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          setIsSubmitted(true);
+          setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+          setTimeout(() => setIsSubmitted(false), 5000);
+          setIsSubmitting(false);
+          return;
+        } else {
+          throw new Error(result.message || 'Verzenden mislukt');
+        }
+      }
+
+      // Fallback: Netlify Forms (werkt alleen op live Netlify site)
+      const netlifyPayload = {
+        'form-name': 'contact',
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || '',
+        subject: formData.subject || 'Contactformulier Streetfood Collective',
+        message: formData.message,
+        'bot-field': ''
+      };
+
       const response = await fetch('/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams(payload).toString()
+        body: new URLSearchParams(netlifyPayload).toString()
       });
 
       if (response.ok) {
@@ -52,7 +92,13 @@ const Contact: React.FC = () => {
         return;
       }
 
-      // Fallback: mailto naar info@streetfoodcollective.nl (bv. bij lokaal testen of als Netlify Forms niet beschikbaar is)
+      // Laatste fallback: mailto
+      throw new Error('E-mailservice niet geconfigureerd');
+
+    } catch (err) {
+      console.error('Verzenden mislukt:', err);
+      
+      // Fallback: mailto naar info@streetfoodcollective.nl
       const subject = encodeURIComponent(formData.subject || 'Contactformulier Streetfood Collective');
       const body = encodeURIComponent(
         `Naam: ${formData.name}\n` +
@@ -60,16 +106,13 @@ const Contact: React.FC = () => {
         `Telefoon: ${formData.phone || 'Niet opgegeven'}\n\n` +
         `Bericht:\n${formData.message}`
       );
-      window.location.href = `mailto:info@streetfoodcollective.nl?subject=${subject}&body=${body}`;
-      setIsSubmitted(true);
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-      setTimeout(() => setIsSubmitted(false), 5000);
-    } catch (err) {
-      console.error('Verzenden mislukt:', err);
-      const subject = encodeURIComponent(formData.subject || 'Contactformulier Streetfood Collective');
-      const body = encodeURIComponent(
-        `Naam: ${formData.name}\nEmail: ${formData.email}\nTelefoon: ${formData.phone || 'Niet opgegeven'}\n\nBericht:\n${formData.message}`
-      );
+      
+      if (!WEB3FORMS_ACCESS_KEY) {
+        setError('E-mailservice niet geconfigureerd. Je e-mailclient wordt geopend. Voeg VITE_WEB3FORMS_ACCESS_KEY toe aan .env.local (zie instructies in code).');
+      } else {
+        setError('Er is iets misgegaan. Je e-mailclient wordt geopend als fallback.');
+      }
+      
       window.location.href = `mailto:info@streetfoodcollective.nl?subject=${subject}&body=${body}`;
       setIsSubmitted(true);
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
